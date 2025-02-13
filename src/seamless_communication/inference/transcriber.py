@@ -11,7 +11,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from fairseq2.assets import asset_store, download_manager
-from fairseq2.assets.card import AssetCard
+from fairseq2.assets.card import AssetCard, AssetCardFieldNotFoundError
 from fairseq2.data import Collater
 from fairseq2.data.audio import (
     AudioDecoder,
@@ -150,7 +150,11 @@ class Transcriber(nn.Module):
         else:
             model_card = asset_store.retrieve_card(model_name_or_card)
 
-        tokenizer_type = model_card.field("tokenizer_type").as_(str)
+        # TODO - temporary fix for https://github.com/facebookresearch/seamless_communication/issues/551
+        try:
+            tokenizer_type = model_card.field("tokenizer_type").as_(str)
+        except AssetCardFieldNotFoundError:
+            tokenizer_type = "plain_spm"
 
         if tokenizer_type == "nllb":
             return load_unity_text_tokenizer(model_name_or_card)
